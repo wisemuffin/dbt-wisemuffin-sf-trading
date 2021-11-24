@@ -88,6 +88,14 @@ resource "snowflake_database_grant" "grant_dbt_hol_dev" {
   with_grant_option = false
 }
 
+resource "snowflake_database_grant" "grant_dbt_hol_dev_schema" {
+  provider          = snowflake.security_admin
+  database_name     = snowflake_database.dbt_hol_dev.name
+  privilege         = "CREATE SCHEMA"
+  roles             = [snowflake_role.dev_role.name]
+  with_grant_option = false
+}
+
 resource "snowflake_database_grant" "grant_dbt_hol_prod" {
   provider          = snowflake.security_admin
   database_name     = snowflake_database.dbt_hol_prod.name
@@ -96,6 +104,13 @@ resource "snowflake_database_grant" "grant_dbt_hol_prod" {
   with_grant_option = false
 }
 
+resource "snowflake_database_grant" "grant_dbt_hol_prod_schema" {
+  provider          = snowflake.security_admin
+  database_name     = snowflake_database.dbt_hol_prod.name
+  privilege         = "CREATE SCHEMA"
+  roles             = [snowflake_role.prod_role.name]
+  with_grant_option = false
+}
 
 resource "snowflake_warehouse_grant" "grant_dbt_dev_wh" {
   provider          = snowflake.security_admin
@@ -135,13 +150,24 @@ resource "tls_private_key" "svc_key" {
   rsa_bits  = 2048
 }
 
-
+################### USERS ##################
 resource "snowflake_user" "user" {
   provider          = snowflake.security_admin
   name              = "dbt_user"
   default_warehouse = snowflake_warehouse.dbt_dev_wh.name
   default_role      = snowflake_role.dev_role.name
   rsa_public_key    = substr(tls_private_key.svc_key.public_key_pem, 27, 398)
+}
+
+resource "snowflake_user" "user_david_gmail" {
+  provider          = snowflake.security_admin
+  name              = "david_gmail"
+  default_warehouse = snowflake_warehouse.dbt_dev_wh.name
+  default_role      = snowflake_role.dev_role.name
+  # password     = "secret"
+  email = "davidgriffithsgg777@gmail.com"
+
+  must_change_password = true
 }
 
 
@@ -156,3 +182,6 @@ resource "snowflake_role_grants" "grants_prod" {
   role_name = snowflake_role.prod_role.name
   users     = [snowflake_user.user.name]
 }
+
+
+
