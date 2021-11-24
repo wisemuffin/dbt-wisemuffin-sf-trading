@@ -8,5 +8,7 @@ If multiple users run Terraform, and/or if it runs on different computers, and/o
 ## running
 
 ```bash
-terraform plan
+terraform apply
+
+terraform destroy
 ```

@@ -31,6 +31,7 @@ resource "snowflake_warehouse" "warehouse" {
 provider "snowflake" {
     alias = "security_admin"
     role  = "SECURITYADMIN"
+    region = "ap-southeast-2"
 }
 
 
