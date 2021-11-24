@@ -7,6 +7,8 @@ If multiple users run Terraform, and/or if it runs on different computers, and/o
 
 ## running
 
+**create the user in step 3 of the [guide](https://quickstarts.snowflake.com/guide/terraforming_snowflake/#1)
+
 ```bash
 terraform apply
 

@@ -8,93 +8,151 @@ terraform {
 }
 
 provider "snowflake" {
-  alias = "sys_admin"
-  role  = "SYSADMIN"
+  alias  = "sys_admin"
+  role   = "SYSADMIN"
   region = "ap-southeast-2"
 
 }
 
-resource "snowflake_database" "db" {
+resource "snowflake_database" "dbt_hol_dev" {
   provider = snowflake.sys_admin
-  name     = "TF_DEMO"
+  name     = "DBT_HOL_DEV"
 }
 
-resource "snowflake_warehouse" "warehouse" {
-  provider       = snowflake.sys_admin
-  name           = "TF_DEMO"
-  warehouse_size = "large"
+resource "snowflake_warehouse" "dbt_dev_wh" {
+  provider            = snowflake.sys_admin
+  name                = "dbt_dev_wh"
+  warehouse_size      = "xsmall"
+  initially_suspended = true
+
+  auto_suspend = 60
+}
+
+resource "snowflake_warehouse" "dbt_dev_heavy_wh" {
+  provider            = snowflake.sys_admin
+  name                = "dbt_dev_heavy_wh"
+  warehouse_size      = "large"
+  initially_suspended = true
+
+  auto_suspend = 60
+}
+
+
+resource "snowflake_database" "dbt_hol_prod" {
+  provider = snowflake.sys_admin
+  name     = "DBT_HOL_PROD"
+}
+
+resource "snowflake_warehouse" "dbt_prod_wh" {
+  provider            = snowflake.sys_admin
+  name                = "dbt_prod_wh"
+  warehouse_size      = "xsmall"
+  initially_suspended = true
+
+  auto_suspend = 60
+}
+
+resource "snowflake_warehouse" "dbt_prod_heavy_wh" {
+  provider            = snowflake.sys_admin
+  name                = "dbt_prod_heavy_wh"
+  warehouse_size      = "large"
+  initially_suspended = true
 
   auto_suspend = 60
 }
 
 
 provider "snowflake" {
-    alias = "security_admin"
-    role  = "SECURITYADMIN"
-    region = "ap-southeast-2"
+  alias  = "security_admin"
+  role   = "SECURITYADMIN"
+  region = "ap-southeast-2"
 }
 
 
-resource "snowflake_role" "role" {
-    provider = snowflake.security_admin
-    name     = "TF_DEMO_SVC_ROLE"
+resource "snowflake_role" "dbt_dev_role" {
+  provider = snowflake.security_admin
+  name     = "dbt_dev_role"
+}
+
+resource "snowflake_role" "dbt_prod_role" {
+  provider = snowflake.security_admin
+  name     = "dbt_prod_role"
 }
 
 
-resource "snowflake_database_grant" "grant" {
-    provider          = snowflake.security_admin
-    database_name     = snowflake_database.db.name
-    privilege         = "USAGE"
-    roles             = [snowflake_role.role.name]
-    with_grant_option = false
+resource "snowflake_database_grant" "grant_dbt_hol_dev" {
+  provider          = snowflake.security_admin
+  database_name     = snowflake_database.dbt_hol_dev.name
+  privilege         = "USAGE"
+  roles             = [snowflake_role.dbt_dev_role.name]
+  with_grant_option = false
+}
+
+resource "snowflake_database_grant" "grant_dbt_hol_prod" {
+  provider          = snowflake.security_admin
+  database_name     = snowflake_database.dbt_hol_prod.name
+  privilege         = "USAGE"
+  roles             = [snowflake_role.dbt_prod_role.name]
+  with_grant_option = false
 }
 
 
-resource "snowflake_schema" "schema" {
-    provider   = snowflake.sys_admin
-    database   = snowflake_database.db.name
-    name       = "TF_DEMO"
-    is_managed = false
+resource "snowflake_warehouse_grant" "grant_dbt_dev_wh" {
+  provider          = snowflake.security_admin
+  warehouse_name    = snowflake_warehouse.dbt_dev_wh.name
+  privilege         = "USAGE"
+  roles             = [snowflake_role.dbt_dev_role.name]
+  with_grant_option = false
 }
 
-
-resource "snowflake_schema_grant" "grant" {
-    provider          = snowflake.security_admin
-    database_name     = snowflake_database.db.name
-    schema_name       = snowflake_schema.schema.name
-    privilege         = "USAGE"
-    roles             = [snowflake_role.role.name]
-    with_grant_option = false
+resource "snowflake_warehouse_grant" "grant_dbt_dev_heavy_wh" {
+  provider          = snowflake.security_admin
+  warehouse_name    = snowflake_warehouse.dbt_dev_heavy_wh.name
+  privilege         = "USAGE"
+  roles             = [snowflake_role.dbt_dev_role.name]
+  with_grant_option = false
 }
 
+resource "snowflake_warehouse_grant" "grant_dbt_prod_wh" {
+  provider          = snowflake.security_admin
+  warehouse_name    = snowflake_warehouse.dbt_prod_wh.name
+  privilege         = "USAGE"
+  roles             = [snowflake_role.dbt_prod_role.name]
+  with_grant_option = false
+}
 
-resource "snowflake_warehouse_grant" "grant" {
-    provider          = snowflake.security_admin
-    warehouse_name    = snowflake_warehouse.warehouse.name
-    privilege         = "USAGE"
-    roles             = [snowflake_role.role.name]
-    with_grant_option = false
+resource "snowflake_warehouse_grant" "grant_dbt_prod_heavy_wh" {
+  provider          = snowflake.security_admin
+  warehouse_name    = snowflake_warehouse.dbt_prod_heavy_wh.name
+  privilege         = "USAGE"
+  roles             = [snowflake_role.dbt_prod_role.name]
+  with_grant_option = false
 }
 
 
 resource "tls_private_key" "svc_key" {
-    algorithm = "RSA"
-    rsa_bits  = 2048
+  algorithm = "RSA"
+  rsa_bits  = 2048
 }
 
 
 resource "snowflake_user" "user" {
-    provider          = snowflake.security_admin
-    name              = "tf_demo_user"
-    default_warehouse = snowflake_warehouse.warehouse.name
-    default_role      = snowflake_role.role.name
-    default_namespace = "${snowflake_database.db.name}.${snowflake_schema.schema.name}"
-    rsa_public_key    = substr(tls_private_key.svc_key.public_key_pem, 27, 398)
+  provider          = snowflake.security_admin
+  name              = "dbt_user"
+  default_warehouse = snowflake_warehouse.dbt_dev_wh.name
+  default_role      = snowflake_role.dbt_dev_role.name
+  rsa_public_key    = substr(tls_private_key.svc_key.public_key_pem, 27, 398)
 }
 
 
-resource "snowflake_role_grants" "grants" {
-    provider  = snowflake.security_admin
-    role_name = snowflake_role.role.name
-    users     = [snowflake_user.user.name]
+resource "snowflake_role_grants" "grants_dev" {
+  provider  = snowflake.security_admin
+  role_name = snowflake_role.dbt_dev_role.name
+  users     = [snowflake_user.user.name]
+}
+
+resource "snowflake_role_grants" "grants_prod" {
+  provider  = snowflake.security_admin
+  role_name = snowflake_role.dbt_prod_role.name
+  users     = [snowflake_user.user.name]
 }
