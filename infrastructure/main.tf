@@ -71,12 +71,12 @@ provider "snowflake" {
 
 resource "snowflake_role" "dbt_dev_role" {
   provider = snowflake.security_admin
-  name     = "dbt_dev_role"
+  name     = "DBT_DEV_ROLE"
 }
 
 resource "snowflake_role" "dbt_prod_role" {
   provider = snowflake.security_admin
-  name     = "dbt_prod_role"
+  name     = "DBT_PROD_ROLE"
 }
 
 
