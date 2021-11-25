@@ -14,3 +14,9 @@ terraform apply
 
 terraform destroy
 ```
+
+## Importing Existing Resources into the .tfstate File
+
+```bash
+terraform import snowflake_role.public "PUBLIC"
+```
